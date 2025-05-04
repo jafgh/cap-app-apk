@@ -19,6 +19,7 @@ from kivy.uix.scrollview import ScrollView
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.popup import Popup
 from kivy.uix.textinput import TextInput
+from kivy.uix.image import Image as KivyImage
 from kivy.clock import Clock
 from kivy.core.image import Image as CoreImage
 
@@ -60,6 +61,7 @@ KV = '''
             text: ''
             font_size: 14
             color: 1,1,1,1
+
     Button:
         text: 'Add Account'
         size_hint_y: None
@@ -114,7 +116,6 @@ class CaptchaWidget(BoxLayout):
             lbl = self.ids.notification_label
             lbl.text = msg
             lbl.color = color
-            print(f"{color}: {msg}")
         Clock.schedule_once(_update, 0)
 
     def open_add_account_popup(self):
@@ -220,7 +221,6 @@ class CaptchaWidget(BoxLayout):
 
     def _create_account_ui(self, user, processes):
         layout = self.ids.accounts_layout
-        # Account header
         hdr = Label(text=f"Account: {user}", size_hint_y=None, height='25dp')
         layout.add_widget(hdr)
         for proc in processes:
@@ -235,12 +235,16 @@ class CaptchaWidget(BoxLayout):
             btn.bind(on_press=lambda inst, u=user, p=pid, pr=prog: threading.Thread(target=self._handle_captcha, args=(u,p,pr)).start())
 
     def _handle_captcha(self, user, pid, prog):
-        Clock.schedule_once(lambda dt: prog.start(), 0)
+        # تحديث شريط التقدم في الخيط الرئيسي
+        Clock.schedule_once(lambda dt: setattr(prog, 'value', 0), 0)
+        # جلب الكابتشا في الخلفية
         data = self.get_captcha(self.accounts[user]["session"], pid, user)
-        Clock.schedule_once(lambda dt: prog.stop(), 0)
+        # إكمال شريط التقدم
+        Clock.schedule_once(lambda dt: setattr(prog, 'value', prog.max), 0)
+        # عرض الكابتشا في الخيط الرئيسي
         if data:
             self.current_captcha = (user, pid)
-            self.show_captcha(data)
+            Clock.schedule_once(lambda dt: self._display_captcha(data), 0)
 
     def get_captcha(self, session, pid, user):
         url = f"https://api.ecsc.gov.sy:8443/captcha/get/{pid}"
@@ -259,7 +263,7 @@ class CaptchaWidget(BoxLayout):
                     return None
         except Exception as e:
             self.update_notification(f"Captcha error: {e}", (1,0,0,1))
-            return None
+        return None
 
     def predict_captcha(self, pil_img):
         tf = preprocess_for_model()
@@ -277,52 +281,60 @@ class CaptchaWidget(BoxLayout):
         pred_ms = (end_pred - start_pred) * 1000
         return pred, pre_ms, pred_ms
 
-    def show_captcha(self, b64data):
-        # إزالة محتوى سابق
-        self.ids.captcha_box.clear_widgets()
-        b64 = b64data.split(',')[1] if ',' in b64data else b64data
-        raw = base64.b64decode(b64)
-        pil = PILImage.open(io.BytesIO(raw))
-        frames = []
+    def _display_captcha(self, b64data):
         try:
-            while True:
-                rgba = pil.convert("RGB")
-                frames.append(np.array(rgba, dtype=np.uint8))
-                pil.seek(pil.tell()+1)
-        except EOFError:
-            pass
-        stack = np.stack(frames, axis=0)
-        bg = np.median(stack, axis=0).astype(np.uint8)
-        gray = (0.2989*bg[...,0] + 0.5870*bg[...,1] + 0.1140*bg[...,2]).astype(np.uint8)
-        hist, _ = np.histogram(gray.flatten(), bins=256, range=(0,256))
-        total = gray.size
-        sum_total = np.dot(np.arange(256), hist)
-        sumB, wB, max_var, threshold = 0.0, 0.0, 0.0, 0
-        for i in range(256):
-            wB += hist[i]
-            if wB == 0: continue
-            wF = total - wB
-            if wF == 0: break
-            sumB += i*hist[i]
-            mB = sumB / wB
-            mF = (sum_total - sumB) / wF
-            varBetween = wB * wF * (mB - mF)**2
-            if varBetween > max_var:
-                max_var = varBetween
-                threshold = i
-        pil_gray = PILImage.fromarray(gray, mode='L')
-        binary = pil_gray.point(lambda p: 255 if p > threshold else 0)
-        # عرض الصورة
-        data = io.BytesIO()
-        binary.save(data, format='png')
-        data.seek(0)
-        img = CoreImage(data, ext='png')
-        img_widget = Label(texture=img.texture, size_hint_y=None, height='90dp')
-        self.ids.captcha_box.add_widget(img_widget)
-        pred, pre_ms, pred_ms = self.predict_captcha(binary)
-        self.update_notification(f"Predicted CAPTCHA: {pred}", (0,0,1,1))
-        Clock.schedule_once(lambda dt: setattr(self.ids.speed_label, 'text', f"Preprocess: {pre_ms:.2f} ms | Predict: {pred_ms:.2f} ms"), 0)
-        self.submit_captcha(pred)
+            self.ids.captcha_box.clear_widgets()
+            b64 = b64data.split(',')[1] if ',' in b64data else b64data
+            raw = base64.b64decode(b64)
+            pil = PILImage.open(io.BytesIO(raw))
+            # حساب الخلفية وتحويل إلى ثنائي
+            frames = []
+            try:
+                while True:
+                    rgba = pil.convert("RGB")
+                    frames.append(np.array(rgba, dtype=np.uint8))
+                    pil.seek(pil.tell()+1)
+            except EOFError:
+                pass
+            stack = np.stack(frames, axis=0)
+            bg = np.median(stack, axis=0).astype(np.uint8)
+            gray = (0.2989*bg[...,0] + 0.5870*bg[...,1] + 0.1140*bg[...,2]).astype(np.uint8)
+            # إيجاد العتبة (Otsu)
+            hist, _ = np.histogram(gray.flatten(), bins=256, range=(0,256))
+            total = gray.size
+            sum_total = np.dot(np.arange(256), hist)
+            sumB, wB, max_var, threshold = 0.0, 0.0, 0.0, 0
+            for i in range(256):
+                wB += hist[i]
+                if wB == 0: continue
+                wF = total - wB
+                if wF == 0: break
+                sumB += i*hist[i]
+                mB = sumB / wB
+                mF = (sum_total - sumB) / wF
+                varBetween = wB * wF * (mB - mF)**2
+                if varBetween > max_var:
+                    max_var = varBetween
+                    threshold = i
+            pil_gray = PILImage.fromarray(gray, mode='L')
+            binary = pil_gray.point(lambda p: 255 if p > threshold else 0)
+
+            # عرض الصورة
+            data_buf = io.BytesIO()
+            binary.save(data_buf, format='PNG')
+            data_buf.seek(0)
+            core_img = CoreImage(data_buf, ext='png')
+            img_widget = KivyImage(texture=core_img.texture, size_hint_y=None, height='90dp')
+            self.ids.captcha_box.add_widget(img_widget)
+
+            # التنبؤ والإرسال
+            pred, pre_ms, pred_ms = self.predict_captcha(binary)
+            self.update_notification(f"Predicted CAPTCHA: {pred}", (0,0,1,1))
+            Clock.schedule_once(lambda dt: setattr(self.ids.speed_label, 'text', f"Preprocess: {pre_ms:.2f} ms | Predict: {pred_ms:.2f} ms"), 0)
+            self.submit_captcha(pred)
+
+        except Exception as e:
+            self.update_notification(f"Error showing captcha: {e}", (1,0,0,1))
 
     def submit_captcha(self, solution):
         user, pid = self.current_captcha
