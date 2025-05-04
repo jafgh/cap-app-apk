@@ -1,5 +1,5 @@
 # Use official Python base image with Buildozer dependencies
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 # Install required system packages
 RUN apt-get update && apt-get install -y \
