@@ -1,50 +1,59 @@
-# Use official Python base image with Buildozer dependencies
-FROM ubuntu:24.04
+[app]
 
-# Install required system packages
-RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    unzip \
-    zip \
-    build-essential \
-    openjdk-11-jdk \
-    python3-pip \
-    python3-setuptools \
-    python3-wheel \
-    libffi-dev \
-    libssl-dev \
-    autoconf \
-    libtool \
-    pkg-config \
-    zlib1g-dev \
-    libncurses5-dev \
-    libncursesw5-dev \
-    libsqlite3-dev \
-    libjpeg-dev \
-    libfreetype6-dev \
-    libgl1-mesa-dev \
-    libgles2-mesa-dev \
-    && rm -rf /var/lib/apt/lists/*
+# (اسم تطبيقك الظاهر للمستخدم)
+title = CapApp
 
-# Install Buildozer and Cython
-RUN pip3 install --upgrade pip
-RUN pip3 install buildozer==1.4.2 cython
+# (اسم الحزمة ورابط الدومين الخاص بك)
+package.name = capapp
+package.domain = org.jafgh
 
-# Set working directory
-WORKDIR /app
+# مسار المجلد الذي يحتوي على شيفرتك المصدرية
+source.dir = .
 
-# Copy source
-COPY . /app
+# امتدادات الملفات التي تريد تضمينها (كالموديل ONNX والصور وملفات KV)
+source.include_exts = py,kv,png,jpg,atlas,onnx
+source.include_dirs = assets
 
-# Ensure assets folder exists
-RUN mkdir -p /app/assets
-# Copy ONNX model into assets (assumes model placed in repo under assets/)
-# (If hosted elsewhere, adjust accordingly)
+# رقم الإصدار
+version = 0.1
 
-# Run Buildozer to compile APK (debug)
-# This will generate bin/MyApp-0.1-debug.apk
-RUN buildozer android debug
+# المتطلبات: عدّل حسب المكتبات التي يستخدمها مشروعك
+requirements = python3,kivy,requests,onnxruntime
 
-# Default command
-CMD ["buildozer", "android", "debug", "--verbose"]
+# إعدادات الواجهة
+orientation = portrait
+fullscreen = 0
+window.fsaa = 2
+
+# (اختياري) إذا لديك أيقونات أو صور شاشة تحميل
+# android.icon = assets/icon.png
+# android.presplash = assets/presplash.png
+
+[buildozer]
+
+# مستوى الطباعة في اللوغ
+log_level = 2
+warn_on_root = 1
+
+# إذا أردت ملف خارجي لبيانات اللوغ
+# log_file = buildozer.log
+
+#------------------------------------------------------------------------------  
+# إعدادات Android (عدّل الأرقام إذا لزم الأمر)
+#------------------------------------------------------------------------------
+
+# نسخة API التي تريد البناء ضدّها
+android.api = 33
+
+# أقل نسخة Android تدعمها
+android.minapi = 21
+
+# إعدادات SDK/NDK (يمكنك تغيير الإصدارات حسب حاجة Buildozer لديك)
+android.sdk = 20
+android.ndk = 23b
+
+# بنية المعالج
+android.arch = arm64-v8a
+
+# (اختياري) إذا كنت تريد تضمين صلاحيات إضافية
+# android.permissions = INTERNET, WRITE_EXTERNAL_STORAGE
