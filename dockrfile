@@ -1,0 +1,24 @@
+FROM ubuntu:24.04
+RUN apt-get update && apt-get install -y \
+    git curl unzip zip build-essential openjdk-11-jdk \
+    python3-pip python3-setuptools python3-wheel \
+    libffi-dev libssl-dev autoconf libtool pkg-config \
+    zlib1g-dev libncurses5-dev libncursesw5-dev \
+    libsqlite3-dev libjpeg-dev libfreetype6-dev \
+    libgl1-mesa-dev libgles2-mesa-dev \
+  && rm -rf /var/lib/apt/lists/*
+
+RUN pip3 install --upgrade pip
+RUN pip3 install buildozer==1.4.2 cython
+
+WORKDIR /app
+COPY . /app
+
+RUN mkdir -p /app/assets
+
+# إذا أردت تضمين خطوات إضافية لنقل الموديل مثلاً:
+# COPY assets/model.onnx /app/assets/
+
+RUN buildozer android debug
+
+CMD ["buildozer", "android", "debug", "--verbose"]
