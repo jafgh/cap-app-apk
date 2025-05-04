@@ -192,6 +192,11 @@ jobs:
       run: |
         yes | ~/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk --licenses
 
+    - name: Install system dependencies for autoconf
+      run: |
+          sudo apt-get update
+          sudo apt-get install -y autoconf automake libtool
+
     # Install Python dependencies: Buildozer and Cython
     - name: Install/Upgrade buildozer and cython
       run: |
