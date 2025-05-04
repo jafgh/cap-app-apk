@@ -1,0 +1,14 @@
+# ملف: patches/libffi-fix.patch
+# ضع هذا الملف في مجلد project_root/patches/
+
+--- a/pythonforandroid/recipes/libffi/libffi-*/configure.ac
++++ b/pythonforandroid/recipes/libffi/libffi-*/configure.ac
+@@ -212,6 +212,7 @@
+ LT_PREREQ([2.2.6])
+ m4_define([_LT_INTERNAL_LITE_MACROS], [lt__sysroot_symbol_underscore])
+
++# السماح بماكرو LT_SYS_SYMBOL_USCORE المفقود قبل تهيئة libtool
++m4_pattern_allow([LT_SYS_SYMBOL_USCORE])
+ LT_INIT
+
+ # بقية الملف تبقى كما هي
