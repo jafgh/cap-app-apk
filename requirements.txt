@@ -1,5 +1,5 @@
 kivy==2.1.0
-onnxruntime
+
 opencv-python
 numpy
 pillow
