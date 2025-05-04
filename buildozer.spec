@@ -1,49 +1,35 @@
 [app]
-# اسم التطبيق الظاهر للمستخدم
-title = CapApp
+# اسم التطبيق الظاهر على الجهاز
+title = CAP App
 
-# اسم الحزمة ودومينك العكسي
+# اسم الحزمة والدومين العكسي
 package.name = capapp
-package.domain = org.jafgh
+package.domain = org.example
 
-# مسار الشيفرة المصدرية
+# مسار الكود المصدري
 source.dir = .
 
-# امتدادات وملفات الأصول المطلوب تضمينها
-source.include_exts = py,kv,png,jpg,atlas,onnx
-source.include_dirs = assets
-
-# إصدار التطبيق
+# نسخة التطبيق
 version = 0.1
 
-# المتطلبات البرمجية
-requirements = python3,kivy,requests,onnxruntime
+# المتطلبات (حذفت onnxruntime)
+requirements = python3,kivy,requests
 
-# إعدادات الواجهة
-orientation = portrait
-fullscreen = 0
-window.fsaa = 2
+# طبق هذا الباتش قبل البناء
+p4a_patch = patches/libffi-fix.patch
+
+# معماريات الأندرويد المدعومة
+android.arch = armeabi-v7a, arm64-v8a
+
+# صلاحيات التطبيق
+android.permissions = INTERNET
+
+# اختيارات إضافية (اختياري)
+# icon.filename = %(source.dir)s/assets/icon.png
+# log_level = 2
+# android.api = 31
+# android.minapi = 21
 
 [buildozer]
-log_level = 2
-warn_on_root = 1
-
-#------------------------------------------------------------------------------  
-# إعدادات Android
-#------------------------------------------------------------------------------
-
-# نسخة Android API المستهدفة
-android.api = 33
-
-# أقل نسخة Android مدعومة
-android.minapi = 21
-
-# إعدادات SDK/NDK الخاصة بـ Buildozer
-android.sdk = 20
-android.ndk = 23b
-
-# معمارية المعالج
-android.arch = arm64-v8a, armeabi-v7a
-
-# استخدم فرع الـ python-for-android الأحدث (اختياري)
-p4a.branch = develop
+# نظّف البيئة تلقائياً عند إعادة البناء
+clean_on_rebuild = True
