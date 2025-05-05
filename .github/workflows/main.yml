@@ -77,7 +77,6 @@ jobs:
           mv "${ANDROID_SDK_ROOT}/cmdline-tools/cmdline-tools/"* "${ANDROID_SDK_ROOT}/cmdline-tools/latest/"
           rm -rf "${ANDROID_SDK_ROOT}/cmdline-tools/cmdline-tools"
         else
-          # Move all except 'latest' itself
           find "${ANDROID_SDK_ROOT}/cmdline-tools" -maxdepth 1 -mindepth 1 ! -name latest -exec mv -t "${ANDROID_SDK_ROOT}/cmdline-tools/latest/" {} +
         fi
 
@@ -100,9 +99,15 @@ jobs:
         rm -rf $HOME/.buildozer/android/platform/android-sdk
         ln -s "${{ github.workspace }}/android-sdk" $HOME/.buildozer/android/platform/android-sdk
 
+    - name: Link sdkmanager for Buildozer expected path
+      run: |
+        mkdir -p $HOME/.buildozer/android/platform/android-sdk/tools/bin
+        ln -sf "${{ github.workspace }}/android-sdk/cmdline-tools/latest/bin/sdkmanager" \
+               $HOME/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
+
     - name: Accept Android SDK Licenses
       run: |
-        yes | $HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk --licenses
+        yes | $HOME/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk --licenses
 
     - name: Install/Upgrade Buildozer and Cython
       run: |
