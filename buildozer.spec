@@ -1,35 +1,39 @@
 [app]
-# اسم التطبيق الظاهر على الجهاز
-title = CAP App
-
-# اسم الحزمة والدومين العكسي
+# اسم التطبيق كما سيظهر على الجهاز
+title = CAPTCHA Solver
+# اسم الحزمة (حروف وأرقام وبدون مسافات)
 package.name = capapp
-package.domain = org.example
+# نطاق الحزمة
+package.domain = org.yourdomain
 
-# مسار الكود المصدري
+# المجلد الرئيسي للمصدر
 source.dir = .
+# امتدادات الملفات التي يجب تضمينها
+source.include_exts = py,png,jpg,kv,atlas,onnx
 
-# نسخة التطبيق
-version = 0.1
+# المتطلبات التي يحتاجها التطبيق
+# ملاحظة: torch و torchvision قد لا يعملان بشكل مباشر على Android،
+# يمكن استبدالهما بنسخ tflite أو استخدام onnxruntime فقط.
+requirements = python3,kivy,onnxruntime,opencv-python,numpy,pillow,requests,python-bidi
 
-# المتطلبات (حذفت onnxruntime)
-requirements = python3,kivy,requests
+# اتجاه التطبيق (portrait أو landscape)
+orientation = portrait
 
-# طبق هذا الباتش قبل البناء
-p4a_patch = patches/libffi-fix.patch
+# مستوى السجل (0–2)
+log_level = 2
 
-# معماريات الأندرويد المدعومة
-android.arch = armeabi-v7a, arm64-v8a
-
-# صلاحيات التطبيق
+# أذونات الأندرويد المطلوبة
 android.permissions = INTERNET
 
-# اختيارات إضافية (اختياري)
-# icon.filename = %(source.dir)s/assets/icon.png
-# log_level = 2
-# android.api = 31
+# إعدادات توليد الحزمة للأندرويد
+# نسخة تنفيذية مُشترَكة مع armeabi-v7a و arm64-v8a تلقائيًا
+android.arch = armeabi-v7a,arm64-v8a
+
+# إصدار SDK الأدنى والأقصى (يمكن تعديله حسب حاجتك)
 # android.minapi = 21
+# android.target = 30
 
 [buildozer]
-# نظّف البيئة تلقائياً عند إعادة البناء
-clean_on_rebuild = True
+# مسار ملف الجافا السمتيك
+android.sdk_path = /home/builduser/.buildozer/android/platform/android-sdk
+android.ndk_path = /home/builduser/.buildozer/android/platform/android-ndk
