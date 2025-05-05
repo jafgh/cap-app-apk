@@ -1,48 +1,44 @@
-# Use official Python base image with Buildozer dependencies
-FROM ubuntu:24.04
-# Install required system packages
-RUN apt-get update && apt-get install -y \
-  git \
-  curl \
-  unzip \
-  zip \
-  build-essential \
-  openjdk-11-jdk \
-  python3-pip \
-  python3-setuptools \
-  python3-wheel \
-  libffi-dev \
-  libssl-dev \
-  autoconf \
-  libtool \
-  pkg-config \
-  zlib1g-dev \
-  libncurses5-dev \
-  libncursesw5-dev \
-  libsqlite3-dev \
-  libjpeg-dev \
-  libfreetype6-dev \
-  libgl1-mesa-dev \
-  libgles2-mesa-dev \
-  && rm -rf /var/lib/apt/lists/*
+# Use an official Ubuntu as a parent image
+FROM ubuntu:22.04
 
-# Install Buildozer and Cython
-RUN pip3 install --upgrade pip
-RUN pip3 install buildozer==1.4.2 cython
+# Set noninteractive mode for apt
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Set working directory
-WORKDIR /app
-# Copy source
-COPY . /app
+# تحديث الحزم وتثبيت الاعتمادات الأساسية
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    python3 \
+    python3-pip \
+    python3-setuptools \
+    python3-wheel \
+    openjdk-11-jdk \
+    unzip \
+    zip \
+    libffi-dev \
+    libssl-dev \
+    libsqlite3-dev \
+    build-essential \
+    autoconf \
+    automake \
+    libtool \
+    pkg-config \
+    zlib1g-dev \
+    sudo \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Ensure assets folder exists
-RUN mkdir -p /app/assets
-# Copy ONNX model into assets (assumes model placed in repo under assets/)
-# (If hosted elsewhere, adjust accordingly)
+# تثبيت Buildozer و Cython
+RUN pip3 install --upgrade pip setuptools wheel cython \
+    && pip3 install buildozer
 
-# Run Buildozer to compile APK (debug)
-# This will generate bin/MyApp-0.1-debug.apk
-RUN buildozer android debug
+# إعداد مستخدم غير جذري (اختياري لأمن أفضل)
+RUN useradd -ms /bin/bash builduser && echo "builduser ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/builduser
+USER builduser
+WORKDIR /home/builduser/app
 
-# Default command
-CMD ["buildozer", "android", "debug", "--verbose"]
+# نسخ الملفات ثم بناء التطبيق (متغيّر حسب الحاجة)
+# COPY . /home/builduser/app
+# RUN buildozer android debug
+
+# نقطة الدخول الافتراضية (يمكن تعديلها أو تجاوزها عند التشغيل)
+ENTRYPOINT ["bash"]
